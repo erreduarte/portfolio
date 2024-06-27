@@ -14,6 +14,8 @@ A compelling secondary objective emerged during the course of the project. It be
 2. Revamped sales tables, aligning them with the requirements of the new platform and optimizing data flow.
 3. Spearheaded the standardization initiative, resulting in data that is not only reliable but also comprehensible to diverse stakeholders.
 
+## Acknowledgments
+
 While reviewing this project, it's important to note that several aspects of the code and data have been altered to preserve the confidentiality of the company. To uphold privacy and security measures, fictitious names have been used for tables and columns, and other parts have been obscured. These alterations were made with the utmost care to maintain the integrity of the project while safeguarding sensitive information.
 
 By implementing these changes, I aim to demonstrate my commitment to ethical considerations and my dedication to maintaining the confidentiality of proprietary data. The objective of this presentation is solely to showcase my technical skills. The fictitious elements in no way diminish the significance of the project's technical achievements and the strides made in data migration and accessibility.
