@@ -1,38 +1,66 @@
-Common Table Expressions (CTEs):
+code_explanation:
+  description: >
+    This YAML file provides an explanation of the SQL code that combines order details
+    from ecommerce and subscriptions orders.
+  steps:
+    - step: 1
+      description: >
+        Create a Common Table Expression (CTE) named `ecommerce_orders` that retrieves
+        order details from the `ecommerce_orders` table.
+      details:
+        - name: ecommerce_orders
+          purpose: >
+            Extracts order details such as order ID, line item details (ID, SKU, quantity,
+            price per item), tax, shipping cost, and currency from `ecommerce_orders`.
+          fields_extracted:
+            - order_id: Order ID from `ID` column
+            - line_item_id: Line item ID extracted using `explode(from_json(line_items, schema_of_json('["str"]')))`
+            - SKU: SKU (Stock Keeping Unit) extracted from `exploded_value:sku`
+            - quantity: Quantity of items extracted from `exploded_value:quantity`
+            - price_per_item: Price per item extracted from `exploded_value:price`
+            - tax: Total tax extracted from `current_total_tax`
+            - shipping_cost: Shipping cost extracted from `total_shipping_price_set:presentment_money:amount`
+            - currency: Currency of the order
+          source_table: ecommerce_orders
 
-CTEs (WITH clause) allow you to define temporary result sets that can be used within subsequent SELECT, INSERT, UPDATE, or DELETE statements. In this YAML representation, the CTEs define three separate datasets: ecommerce_orders, subscriptions_orders, and sales_orders.
-ecommerce_orders CTE:
+    - step: 2
+      description: >
+        Create a CTE named `subscriptions_orders` that retrieves order details from
+        `subscriptions_adjustments` table.
+      details:
+        - name: subscriptions_orders
+          purpose: >
+            Extracts order details such as line item ID, order ID (mapped to invoice ID),
+            SKU, quantity, price per item, tax, and currency from `subscriptions_adjustments`.
+          fields_extracted:
+            - line_item_id: Line item ID from `id`
+            - order_id: Order ID (mapped to invoice ID)
+            - SKU: Product code extracted from `product_code`
+            - quantity: Quantity of items extracted from `quantity`
+            - price_per_item: Unit amount extracted from `unit_amount`
+            - tax: Tax amount extracted from `tax`
+            - shipping_cost: NULL (as shipping cost is not applicable)
+            - currency: Currency of the order
+          source_table: subscriptions_adjustments
 
-This CTE retrieves data from a source referenced by {{ref ('ecommerce_orders')}}. It processes ecommerce order data to extract specific details about line items:
+    - step: 3
+      description: >
+        Create a final CTE named `sales_orders` that combines the results of
+        `ecommerce_orders` and `subscriptions_orders`.
+      details:
+        - name: sales_orders
+          purpose: >
+            Combines order details from both `ecommerce_orders` and `subscriptions_orders`
+            CTEs into a single dataset.
+          fields_combined: "* (All columns)"
+          combined_from_ctes:
+            - ecommerce_orders
+            - subscriptions_orders
 
-    order_id: ID of the order.
-    line_item_id: ID of each line item, extracted using explode(from_json(line_items, schema_of_json('["str"]'))).
-    SKU: Stock Keeping Unit (SKU) of each line item.
-    quantity: Quantity of each item ordered.
-    price_per_item: Price per item.
-    tax: Total tax amount for the order.
-    shipping_cost: Total shipping cost for the order.
-    currency: Currency used for the order.
-
-subscriptions_orders CTE:
-
-This CTE retrieves data from {{ref ('subscriptions_adjustments')}}. It processes subscription adjustment data to extract details about line items:
-
-    line_item_id: ID of each line item.
-    order_id: ID of the invoice associated with the order.
-    SKU: Product code (SKU) of each line item.
-    quantity: Quantity of each item ordered.
-    price_per_item: Unit amount or price per item.
-    tax: Tax amount for the subscription order.
-    shipping_cost: NULL value (not applicable for subscriptions).
-    currency: Currency used for the order.
-
-sales_orders CTE:
-
-This CTE combines data from both ecommerce_orders and subscriptions_orders using UNION ALL, preserving duplicates if any. It selects all columns (line_item_id, order_id, SKU, quantity, price_per_item, tax, shipping_cost, currency) from both datasets to create a unified dataset of sales orders.
-Final SELECT Statement:
-
-The final SELECT * FROM sales_orders; statement retrieves all columns from the sales_orders CTE. This is the output of the entire query, combining data from both ecommerce and subscriptions into a unified dataset of sales orders.
-Summary:
-
-The YAML code snippet provided integrates and transforms data from ecommerce orders and subscription adjustments into a single dataset (sales_orders). It uses Common Table Expressions (CTEs) to define and merge the datasets efficiently, preparing the data for further analysis or processing. This approach is commonly used in data integration tasks where data from different transactional systems (like ecommerce and subscriptions) needs to be consolidated for reporting or analytics purposes.
+    - step: 4
+      description: >
+        Execute a final SELECT statement to retrieve all columns from the `sales_orders`
+        CTE, effectively combining all order details from both ecommerce and subscriptions.
+      details:
+        - purpose: Retrieve all columns from the `sales_orders` CTE.
+        - source_cte: sales_orders
