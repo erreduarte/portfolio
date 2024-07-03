@@ -1,0 +1,53 @@
+Common Table Expressions (CTEs):
+
+CTEs (WITH clause) allow you to define temporary result sets that can be used within subsequent SELECT, INSERT, UPDATE, or DELETE statements. In this YAML representation, the CTEs define several stages of data transformation and filtering: ecommerce_line_items, serial_exploded, serial_filtered, table_merged, and sales_packages.
+ecommerce_line_items CTE:
+
+This CTE retrieves data from a source referenced by {{ref ('ecommerce_orders')}}. It processes ecommerce order data to extract specific details about line items:
+
+    order_id: ID of the order.
+    note_attributes: Note attributes associated with the order.
+    exploded_line_item: Each line item is exploded into individual records to extract details such as SKU and line_item_id.
+
+serial_exploded CTE:
+
+This CTE further processes the exploded line items from ecommerce_line_items, extracting serial numbers from note_attributes:
+
+    order_id: ID of the order.
+    line_item_id: ID of each line item.
+    sku: SKU associated with the line item.
+    exploded_note: Each note attribute is exploded into individual records to extract serial_number.
+
+serial_filtered CTE:
+
+This CTE filters and processes the exploded notes to extract relevant serial numbers and update SKUs:
+
+    order_id: ID of the order.
+    line_item_id: ID of each line item.
+    serial_number: Extracted serial number from notes (exploded_note:value).
+    updated_sku: SKU updated based on the presence of a valid serial number in note attributes.
+    note_line_item_id: ID of the line item associated with the note.
+
+table_merged CTE:
+
+This CTE merges and consolidates data from serial_filtered to create a cohesive dataset:
+
+    order_id: ID of the order.
+    sku: SKU associated with the order.
+    serial_number: Serial number associated with the order.
+
+sales_packages CTE:
+
+This CTE performs a left join between table_merged and {{ref ('pkg_table')}} to retrieve additional package information:
+
+    order_id: ID of the order.
+    SKU: SKU associated with the order.
+    serial_number: Serial number associated with the order.
+    camera_serial: Camera serial number associated with the order.
+
+Final SELECT Statement:
+
+The final SELECT * FROM sales_packages; statement retrieves all columns from the sales_packages CTE. This is the output of the entire query, combining and filtering data from ecommerce orders, extracting serial numbers, updating SKUs, and joining package information.
+Summary:
+
+The YAML code snippet provided demonstrates a complex data transformation and filtering process. It uses Common Table Expressions (CTEs) to define and manipulate datasets derived from ecommerce order details, specifically focusing on extracting and processing serial numbers from note attributes. This process is typical in scenarios where detailed order analysis and package tracking are necessary, integrating data from multiple sources for comprehensive reporting or operational insights.
