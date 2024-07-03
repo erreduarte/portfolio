@@ -1,0 +1,49 @@
+Common Table Expressions (CTEs):
+
+CTEs (WITH clause) allow you to define temporary result sets that can be used within subsequent SELECT, INSERT, UPDATE, or DELETE statements. In this YAML representation, the CTEs define several stages of data transformation and merging: ecommerce_transactions, subscriptions_transactions, and sales_transactions.
+ecommerce_transactions CTE:
+
+This CTE retrieves data from {{ref ('ecommerce_transactions')}} and joins with {{ref ('ecommerce_orders')}} to link transaction data with ecommerce order details:
+
+    id: ID of the transaction.
+    customer_id: Customer ID associated with the transaction, derived from the default address in ecommerce orders.
+    created_at: Date and time when the transaction was created.
+    payment_gateway: Payment gateway used for the transaction, handling cases where gateway is null or empty.
+    payment_method: Payment method extracted from payment details in the receipt.
+    payment_gateway_transaction_id: ID of the transaction in the payment gateway system.
+    amount: Transaction amount, with refunds represented as negative values.
+    currency: Currency used for the transaction.
+    status: Status of the transaction.
+    type: Type of transaction (e.g., 'refund', 'sale').
+    reference_transaction_id: ID referencing the original transaction.
+    order_id: ID of the order associated with the transaction.
+
+subscriptions_transactions CTE:
+
+This CTE retrieves data from {{ref ('subscriptions_transactions')}}, processing transaction details for subscription payments:
+
+    ID: ID of the transaction.
+    customer_id: Customer ID associated with the transaction.
+    created_at: Date and time when the transaction was created.
+    payment_gateway: NULL (not applicable for subscriptions).
+    payment_method: Payment method categorized based on the payment object type ('credit_card').
+    payment_gateway_transaction_id: ID of the transaction in the payment gateway system.
+    amount: Transaction amount, with refunds represented as negative values.
+    currency: Currency used for the transaction.
+    status: Status of the transaction.
+    type: Type of transaction (e.g., 'refund', 'payment').
+    reference_transaction_id: ID referencing the original transaction.
+    order_id: ID of the order associated with the transaction.
+
+sales_transactions CTE:
+
+This CTE combines data from ecommerce_transactions and subscriptions_transactions using UNION ALL to merge all transaction data:
+
+    Merges columns from both CTEs to create a unified dataset (sales_transactions).
+
+Final SELECT Statement:
+
+The final SELECT * FROM sales_transactions; statement retrieves all columns from the sales_transactions CTE. This is the output of the entire query, providing a consolidated view of transactional data from both ecommerce and subscription platforms.
+Summary:
+
+The YAML code snippet provided demonstrates a data integration and aggregation process using Common Table Expressions (CTEs). It integrates transactional data from ecommerce and subscription systems, harmonizing information such as transaction IDs, customer IDs, timestamps, payment details, amounts, currencies, statuses, types, and associated order IDs. This approach facilitates comprehensive reporting and analysis of financial activities across different sales channels, ensuring accurate tracking and insights into revenue streams and customer transactions.
