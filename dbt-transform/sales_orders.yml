@@ -1,19 +1,80 @@
-Common Table Expressions (CTEs):
+code_explanation:
+  description: >
+    This YAML file provides an explanation of the SQL code that combines order details
+    from ecommerce and subscriptions orders.
+  steps:
+    - step: 1
+      description: >
+        Create a Common Table Expression (CTE) named `ecommerce_orders` that retrieves
+        order details from the `ecommerce_orders` table.
+      details:
+        - name: ecommerce_orders
+          purpose: >
+            Extracts order details such as ID, creation timestamp, customer ID,
+            store type ('ecommerce'), sales channel, shipping status, financial status,
+            fulfillment status, total price, subtotal price, taxes, discounts, shipping cost,
+            and currency from `ecommerce_orders`.
+          fields_extracted:
+            - id: Order ID
+            - created_at: Creation timestamp
+            - customer_id: Customer ID from nested JSON structure (`customer:default_address:customer_id`)
+            - store: Hardcoded as 'ecommerce' to indicate the source
+            - sales_channel: Sales channel from `source_name`
+            - shipping_status: Shipment status extracted from JSON array (`from_json(fulfillments, schema_of_json('["str"]'))[0]:shipment_status`)
+            - financial_status: Financial status
+            - fulfillment_status: Fulfillment status, defaulted to 'unfulfilled' if null
+            - total_price: Total price of the order
+            - subtotal_price: Subtotal price of the order
+            - taxes: Total tax applied
+            - discounts: Total discounts applied
+            - shipping: Shipping cost from `total_shipping_price_set:presentment_money:amount`
+            - currency: Currency of the order
+          source_table: ecommerce_orders
 
-    CTEs (WITH clause) allow you to define temporary result sets that can be used within subsequent SELECT, INSERT, UPDATE, or DELETE statements. In this YAML representation, the CTEs define two separate datasets: ecommerce_orders and subscriptions_orders.
+    - step: 2
+      description: >
+        Create a CTE named `subscriptions_orders` that retrieves subscription order details
+        from the `subscriptions_subscriptions` table.
+      details:
+        - name: subscriptions_orders
+          purpose: >
+            Extracts subscription order details such as ID, creation timestamp, account code,
+            store type ('subscriptions'), subtotal price, and currency from `subscriptions_subscriptions`.
+          fields_extracted:
+            - id: Order ID (UUID)
+            - created_at: Creation timestamp
+            - account_code: Account code associated with the subscription
+            - store: Hardcoded as 'subscriptions' to indicate the source
+            - sales_channel: NULL (not applicable for subscriptions)
+            - shipping_status: NULL (not applicable for subscriptions)
+            - financial_status: NULL (not applicable for subscriptions)
+            - fulfillment_status: NULL (not applicable for subscriptions)
+            - total_price: NULL (not applicable for subscriptions)
+            - subtotal_price: Subtotal price of the subscription
+            - taxes: NULL (not applicable for subscriptions)
+            - discounts: NULL (not applicable for subscriptions)
+            - shipping: NULL (not applicable for subscriptions)
+            - currency: Currency of the subscription
+          source_table: subscriptions_subscriptions
 
-ecommerce_orders CTE:
+    - step: 3
+      description: >
+        Create a final CTE named `sales_orders` that combines the results of
+        `ecommerce_orders` and `subscriptions_orders`.
+      details:
+        - name: sales_orders
+          purpose: >
+            Combines order details from both `ecommerce_orders` and `subscriptions_orders`
+            CTEs into a single dataset.
+          fields_combined: "* (All columns)"
+          combined_from_ctes:
+            - ecommerce_orders
+            - subscriptions_orders
 
-    This CTE retrieves data from a source referenced by {{ref ('base_ecommerce_orders')}}. It selects specific columns (id, created_at, customer_id, etc.) and performs operations like extracting shipment status from JSON data (fulfillments) and handling null values in fulfillment_status.
-
-subscriptions_orders CTE:
-
-    This CTE retrieves data from {{ref ('subscriptions_subscriptions')}}, selecting columns (uuid, created_at, account_code, etc.) and assigning static values ('subscriptions') to certain columns like store.
-
-sales_orders CTE:
-
-    This CTE combines data from both ecommerce_orders and subscriptions_orders using UNION, which merges the results while removing duplicates.
-
-Final SELECT Statement:
-
-    The final SELECT * FROM sales_orders; statement retrieves all columns from the sales_orders CTE. This is the output of the entire query, combining data from both ecommerce and subscriptions into a unified dataset.
+    - step: 4
+      description: >
+        Execute a final SELECT statement to retrieve all columns from the `sales_orders`
+        CTE, effectively combining all order details from both ecommerce and subscriptions.
+      details:
+        - purpose: Retrieve all columns from the `sales_orders` CTE.
+        - source_cte: sales_orders
