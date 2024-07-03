@@ -1,0 +1,8 @@
+    CTEs Section:
+        ecommerce_payments: Extracts transaction IDs (transaction_id) and invoice IDs (invoice_id) from ecommerce transactions retrieved from ecommerce_transactions.
+        subscriptions_payments: Extracts transaction IDs (transaction_id) and invoice IDs (invoice_id) from subscription invoices where the transaction ID is not null, retrieved from subscriptions_invoices.
+
+    Query Section:
+        sales_payment_invoices: Combines the results of ecommerce_payments and subscriptions_payments using a UNION operation to create a unified dataset of transaction and invoice data from both ecommerce and subscription payments.
+
+This YAML file provides structured documentation for the SQL code, describing each CTE and the final query in a clear and organized manner suitable for GitHub documentation. Adjust the descriptions and details as per your specific project requirements.
