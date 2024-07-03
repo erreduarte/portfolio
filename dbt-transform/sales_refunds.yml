@@ -1,0 +1,55 @@
+Common Table Expressions (CTEs):
+
+CTEs (WITH clause) allow you to define temporary result sets that can be used within subsequent SELECT, INSERT, UPDATE, or DELETE statements. In this YAML representation, the CTEs define several stages of data transformation and aggregation: ecommerce_exploded, ecommerce_returns, subscriptions_a, subscriptions_returns, and sales_refunds.
+ecommerce_exploded CTE:
+
+This CTE retrieves data from a source referenced by {{ref ('ecommerce_refunds')}}. It explodes refund_line_items from JSON data to extract specific details about ecommerce refunds:
+
+    order_id: ID of the order associated with the refund.
+    SKU: Stock Keeping Unit (SKU) of each refunded line item.
+    created_at: Date and time when the refund was created.
+    quantity: Quantity of each refunded item.
+
+ecommerce_returns CTE:
+
+This CTE aggregates data from ecommerce_exploded to sum the quantities of refunded items per order, SKU, and creation date:
+
+    order_id: ID of the order associated with the refund.
+    SKU: Stock Keeping Unit (SKU) of each refunded item.
+    created_at: Date and time when the refund was created.
+    quantity: Total quantity of refunded items.
+
+subscriptions_a CTE:
+
+This CTE retrieves adjustment data from {{ref ('subscriptions_adjustments')}}, extracting details such as:
+
+    order_id: ID of the order associated with the adjustment.
+    created_at: Date and time when the adjustment was created.
+    description: Description of the adjustment.
+    original_invoice_number: Extracted invoice number from the adjustment description.
+    quantity: Absolute value of the quantity adjusted.
+
+subscriptions_returns CTE:
+
+This CTE joins subscriptions_a with {{ref ('subscriptions_invoices')}} to link adjustments with invoices and retrieve:
+
+    order_id: ID of the order associated with the adjustment.
+    SKU: Product code (SKU) from the invoice line item.
+    created_at: Date and time when the adjustment was created.
+    quantity: Quantity of items adjusted.
+
+sales_refunds CTE:
+
+This CTE combines data from ecommerce_returns and subscriptions_returns using UNION ALL to merge all refund data:
+
+    order_id: ID of the order associated with the refund.
+    SKU: Stock Keeping Unit (SKU) of each refunded item.
+    created_at: Date and time when the refund was created.
+    quantity: Total quantity of refunded items.
+
+Final SELECT Statement:
+
+The final SELECT * FROM sales_refunds; statement retrieves all columns from the sales_refunds CTE. This is the output of the entire query, providing a consolidated view of all refunds across both ecommerce and subscription platforms.
+Summary:
+
+The YAML code snippet provided demonstrates a data aggregation and integration process using Common Table Expressions (CTEs). It aggregates refund data from ecommerce and subscription systems, consolidating and harmonizing information such as order IDs, SKUs, creation dates, and quantities of refunded items. This approach is useful for reconciling and reporting refund activities across different sales channels, enabling detailed analysis and insights into customer return behaviors and operational performance.
