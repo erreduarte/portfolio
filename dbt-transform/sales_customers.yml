@@ -1,0 +1,18 @@
+Common Table Expressions (CTEs):
+
+CTEs (WITH clause) allow you to define temporary result sets that can be used within subsequent SELECT, INSERT, UPDATE, or DELETE statements. In this YAML representation, the CTEs define two separate datasets: ecommerce_orders and subscriptions_orders.
+ecommerce_orders CTE:
+
+This CTE retrieves data from a source referenced by {{ref ('ecommerce_customers')}}. It selects specific columns (id, store, email, zip_code, street, city, country) from ecommerce customers data. Operations include extracting zip code, street, city, and country from JSON data stored in the addresses field.
+subscriptions_orders CTE:
+
+This CTE retrieves data from {{ref ('subscriptions_accounts')}} and {{ref ('subscriptions_invoices')}}, joining on account code (a.code = b.account:code). It selects columns (id, store, email, zip_code, street, city, country) from subscription accounts and invoices data. Static values are assigned to columns such as store. Grouping by columns ensures unique records are selected.
+sales_customers CTE:
+
+This CTE combines data from both ecommerce_orders and subscriptions_orders using UNION ALL, preserving duplicates. It selects all columns (id, store, email, zip_code, street, city, country) from both datasets to create a unified dataset of sales customers.
+Final SELECT Statement:
+
+The final SELECT * FROM sales_customers; statement retrieves all columns from the sales_customers CTE. This is the output of the entire query, combining data from both ecommerce and subscriptions into a unified dataset.
+Summary:
+
+The YAML code snippet provided integrates and transforms data from ecommerce customers and subscription accounts/invoices into a single dataset (sales_customers). It leverages Common Table Expressions (CTEs) to define and merge the datasets efficiently, preparing the data for further analysis or processing. This approach is typical in data integration tasks where data from disparate sources needs to be harmonized for unified reporting or analytics purposes.
