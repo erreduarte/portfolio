@@ -1,18 +1,73 @@
-Common Table Expressions (CTEs):
+  description: >
+    This YAML file provides an explanation of the SQL code that combines data
+    from ecommerce and subscriptions orders.
+  steps:
+    - step: 1
+      description: >
+        Create a Common Table Expression (CTE) named `ecommerce_orders` that retrieves
+        customer information from the `ecommerce_customers` table.
+      details:
+        - name: ecommerce_orders
+          purpose: >
+            Extracts customer details such as ID, email, and address information (zip code,
+            street, city, country) from the `ecommerce_customers` table using JSON functions.
+          fields_extracted:
+            - id: Customer ID
+            - store: Hardcoded as 'ecommerce' to indicate the source
+            - email: Customer's email address
+            - zip_code: ZIP code extracted using `get_json_object(addresses, '$[0].zip')`
+            - street: Address street extracted using `get_json_object(addresses, '$[0].address1')`
+            - city: City name extracted using `get_json_object(addresses, '$[0].city')`
+            - country: Country name extracted using `get_json_object(addresses, '$[0].country')`
+          source_table: ecommerce_customers
 
-CTEs (WITH clause) allow you to define temporary result sets that can be used within subsequent SELECT, INSERT, UPDATE, or DELETE statements. In this YAML representation, the CTEs define two separate datasets: ecommerce_orders and subscriptions_orders.
-ecommerce_orders CTE:
+    - step: 2
+      description: >
+        Create a CTE named `subscriptions_orders` that retrieves customer information
+        from `subscriptions_accounts` and `subscriptions_invoices` tables.
+      details:
+        - name: subscriptions_orders
+          purpose: >
+            Combines data from `subscriptions_accounts` and `subscriptions_invoices`
+            tables to extract customer details such as ID, email, and address information
+            (zip code, street, city, country) using JSON notation.
+          fields_extracted:
+            - id: Account code as ID
+            - store: Hardcoded as 'subscriptions' to indicate the source
+            - email: Customer's email address
+            - zip_code: Postal code extracted from `b.address:postal_code`
+            - street: Street address extracted from `b.address:street1`
+            - city: City extracted from `b.address:city`
+            - country: Country extracted from `b.address:country`
+          source_tables:
+            - subscriptions_accounts
+            - subscriptions_invoices
 
-This CTE retrieves data from a source referenced by {{ref ('ecommerce_customers')}}. It selects specific columns (id, store, email, zip_code, street, city, country) from ecommerce customers data. Operations include extracting zip code, street, city, and country from JSON data stored in the addresses field.
-subscriptions_orders CTE:
+    - step: 3
+      description: >
+        Create a final CTE named `sales_customers` that combines the results of
+        `ecommerce_orders` and `subscriptions_orders`.
+      details:
+        - name: sales_customers
+          purpose: >
+            Combines customer data from both `ecommerce_orders` and `subscriptions_orders`
+            CTEs into a single dataset.
+          fields_combined:
+            - id: Customer ID
+            - store: Source of the order ('ecommerce' or 'subscriptions')
+            - email: Customer's email address
+            - zip_code: Combined ZIP code information
+            - street: Combined street address information
+            - city: Combined city information
+            - country: Combined country information
+          combined_from_ctes:
+            - ecommerce_orders
+            - subscriptions_orders
 
-This CTE retrieves data from {{ref ('subscriptions_accounts')}} and {{ref ('subscriptions_invoices')}}, joining on account code (a.code = b.account:code). It selects columns (id, store, email, zip_code, street, city, country) from subscription accounts and invoices data. Static values are assigned to columns such as store. Grouping by columns ensures unique records are selected.
-sales_customers CTE:
-
-This CTE combines data from both ecommerce_orders and subscriptions_orders using UNION ALL, preserving duplicates. It selects all columns (id, store, email, zip_code, street, city, country) from both datasets to create a unified dataset of sales customers.
-Final SELECT Statement:
-
-The final SELECT * FROM sales_customers; statement retrieves all columns from the sales_customers CTE. This is the output of the entire query, combining data from both ecommerce and subscriptions into a unified dataset.
-Summary:
-
-The YAML code snippet provided integrates and transforms data from ecommerce customers and subscription accounts/invoices into a single dataset (sales_customers). It leverages Common Table Expressions (CTEs) to define and merge the datasets efficiently, preparing the data for further analysis or processing. This approach is typical in data integration tasks where data from disparate sources needs to be harmonized for unified reporting or analytics purposes.
+    - step: 4
+      description: >
+        Execute a final SELECT statement to retrieve all columns from the `sales_customers`
+        CTE, effectively combining all customer data from both ecommerce and subscriptions.
+      details:
+        - purpose: Retrieve all columns from the `sales_customers` CTE.
+        - source_cte: sales_customers
