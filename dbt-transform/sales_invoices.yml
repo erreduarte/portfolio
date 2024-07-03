@@ -1,8 +1,53 @@
-    CTEs Section:
-        ecommerce_payments: Extracts transaction IDs (transaction_id) and invoice IDs (invoice_id) from ecommerce transactions retrieved from ecommerce_transactions.
-        subscriptions_payments: Extracts transaction IDs (transaction_id) and invoice IDs (invoice_id) from subscription invoices where the transaction ID is not null, retrieved from subscriptions_invoices.
+code_explanation:
+  description: >
+    This YAML file provides an explanation of the SQL code that combines payment
+    information from ecommerce and subscriptions invoices.
+  steps:
+    - step: 1
+      description: >
+        Create a Common Table Expression (CTE) named `ecommerce_payments` that retrieves
+        transaction and invoice IDs from the `ecommerce_transactions` table.
+      details:
+        - name: ecommerce_payments
+          purpose: >
+            Extracts transaction and invoice IDs from the `ecommerce_transactions` table.
+          fields_extracted:
+            - transaction_id: Transaction ID from `id` column
+            - invoice_id: Invoice ID from `receipt:id` column
+          source_table: ecommerce_transactions
 
-    Query Section:
-        sales_payment_invoices: Combines the results of ecommerce_payments and subscriptions_payments using a UNION operation to create a unified dataset of transaction and invoice data from both ecommerce and subscription payments.
+    - step: 2
+      description: >
+        Create a CTE named `subscriptions_payments` that retrieves transaction and
+        invoice IDs from `subscriptions_invoices` table, filtering out NULL transactions.
+      details:
+        - name: subscriptions_payments
+          purpose: >
+            Extracts transaction and invoice IDs from `subscriptions_invoices` table,
+            filtering rows where the transaction ID is not NULL.
+          fields_extracted:
+            - transaction_id: Transaction ID extracted using `get_json_object(transactions, '$[0].id')`
+            - invoice_id: Invoice ID from `id` column
+          source_table: subscriptions_invoices
 
-This YAML file provides structured documentation for the SQL code, describing each CTE and the final query in a clear and organized manner suitable for GitHub documentation. Adjust the descriptions and details as per your specific project requirements.
+    - step: 3
+      description: >
+        Create a final CTE named `sales_payment_invoices` that combines the results of
+        `ecommerce_payments` and `subscriptions_payments`.
+      details:
+        - name: sales_payment_invoices
+          purpose: >
+            Combines payment information from both `ecommerce_payments` and `subscriptions_payments`
+            CTEs into a single dataset.
+          fields_combined: "* (All columns)"
+          combined_from_ctes:
+            - ecommerce_payments
+            - subscriptions_payments
+
+    - step: 4
+      description: >
+        Execute a final SELECT statement to retrieve all columns from the `sales_payment_invoices`
+        CTE, effectively combining all payment information from both ecommerce and subscriptions.
+      details:
+        - purpose: Retrieve all columns from the `sales_payment_invoices` CTE.
+        - source_cte: sales_payment_invoices
