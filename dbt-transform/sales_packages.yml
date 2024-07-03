@@ -1,53 +1,96 @@
-Common Table Expressions (CTEs):
+code_explanation:
+  description: >
+    This YAML file provides an explanation of the SQL code that processes and merges
+    line item details and serial numbers from ecommerce orders.
+  steps:
+    - step: 1
+      description: >
+        Create a Common Table Expression (CTE) named `ecommerce_line_items` that extracts
+        order ID, note attributes, SKU, and line item ID from `ecommerce_orders`.
+      details:
+        - name: ecommerce_line_items
+          purpose: >
+            Extracts order details including SKU and line item ID from `ecommerce_orders`,
+            and explodes the `line_items` JSON array to individual records.
+          fields_extracted:
+            - order_id: Order ID
+            - note_attributes: Note attributes from `note_attributes`
+            - SKU: SKU extracted from `exploded_line_item:sku`
+            - line_item_id: Line item ID extracted from `exploded_line_item:id`
+          source_table: ecommerce_orders
 
-CTEs (WITH clause) allow you to define temporary result sets that can be used within subsequent SELECT, INSERT, UPDATE, or DELETE statements. In this YAML representation, the CTEs define several stages of data transformation and filtering: ecommerce_line_items, serial_exploded, serial_filtered, table_merged, and sales_packages.
-ecommerce_line_items CTE:
+    - step: 2
+      description: >
+        Create a CTE named `serial_exploded` that further expands the exploded note attributes
+        into individual serial numbers.
+      details:
+        - name: serial_exploded
+          purpose: >
+            Expands the note attributes into individual serial numbers associated with
+            each order and line item ID.
+          fields_extracted:
+            - order_id: Order ID
+            - line_item_id: Line item ID
+            - sku: SKU
+            - exploded_note:value: Extracted serial number from `exploded_note:value`
+          source_table: ecommerce_line_items
 
-This CTE retrieves data from a source referenced by {{ref ('ecommerce_orders')}}. It processes ecommerce order data to extract specific details about line items:
+    - step: 3
+      description: >
+        Create a CTE named `serial_filtered` that filters and processes serial numbers
+        and updates SKUs based on specific conditions.
+      details:
+        - name: serial_filtered
+          purpose: >
+            Filters and processes serial numbers, updating SKU and determining the
+            correct note line item ID based on conditions.
+          fields_extracted:
+            - order_id: Order ID
+            - line_item_id: Line item ID
+            - serial_number: Serial number extracted from note attributes
+            - updated_sku: Updated SKU based on serial number condition
+            - note_line_item_id: Note line item ID determined based on serial number condition
+          conditions_checked:
+            - Condition checks if `exploded_note:name` contains keywords '%serial%' or '%camera_sn%'
+            - Checks if `split(exploded_note:name, ':')[0]` matches regex '\\d{13,}' to identify serial numbers
+          source_table: serial_exploded
 
-    order_id: ID of the order.
-    note_attributes: Note attributes associated with the order.
-    exploded_line_item: Each line item is exploded into individual records to extract details such as SKU and line_item_id.
+    - step: 4
+      description: >
+        Create a CTE named `table_merged` that merges and selects final order details,
+        ensuring correct SKU and serial number associations.
+      details:
+        - name: table_merged
+          purpose: >
+            Merges and selects final order details, ensuring the correct SKU and serial
+            number associations based on `line_item_id` and `note_line_item_id` alignment.
+          fields_extracted:
+            - order_id: Order ID
+            - sku: SKU after coalescing updated SKU
+            - serial_number: Serial number
+          conditions_checked:
+            - Checks if `line_item_id` matches `note_line_item_id` for correct association
+          source_table: serial_filtered
 
-serial_exploded CTE:
+    - step: 5
+      description: >
+        Create a CTE named `sales_packages` that finalizes the sales packages by joining
+        with a reference table and grouping results.
+      details:
+        - name: sales_packages
+          purpose: >
+            Finalizes the sales packages by joining with `pkg_table` on serial number
+            and grouping results by order ID, SKU, and serial number.
+          fields_extracted:
+            - order_id: Order ID
+            - SKU: SKU
+            - serial_number: Final serial number after coalescing with `pkg_table`
+          source_table: table_merged
 
-This CTE further processes the exploded line items from ecommerce_line_items, extracting serial numbers from note_attributes:
-
-    order_id: ID of the order.
-    line_item_id: ID of each line item.
-    sku: SKU associated with the line item.
-    exploded_note: Each note attribute is exploded into individual records to extract serial_number.
-
-serial_filtered CTE:
-
-This CTE filters and processes the exploded notes to extract relevant serial numbers and update SKUs:
-
-    order_id: ID of the order.
-    line_item_id: ID of each line item.
-    serial_number: Extracted serial number from notes (exploded_note:value).
-    updated_sku: SKU updated based on the presence of a valid serial number in note attributes.
-    note_line_item_id: ID of the line item associated with the note.
-
-table_merged CTE:
-
-This CTE merges and consolidates data from serial_filtered to create a cohesive dataset:
-
-    order_id: ID of the order.
-    sku: SKU associated with the order.
-    serial_number: Serial number associated with the order.
-
-sales_packages CTE:
-
-This CTE performs a left join between table_merged and {{ref ('pkg_table')}} to retrieve additional package information:
-
-    order_id: ID of the order.
-    SKU: SKU associated with the order.
-    serial_number: Serial number associated with the order.
-    camera_serial: Camera serial number associated with the order.
-
-Final SELECT Statement:
-
-The final SELECT * FROM sales_packages; statement retrieves all columns from the sales_packages CTE. This is the output of the entire query, combining and filtering data from ecommerce orders, extracting serial numbers, updating SKUs, and joining package information.
-Summary:
-
-The YAML code snippet provided demonstrates a complex data transformation and filtering process. It uses Common Table Expressions (CTEs) to define and manipulate datasets derived from ecommerce order details, specifically focusing on extracting and processing serial numbers from note attributes. This process is typical in scenarios where detailed order analysis and package tracking are necessary, integrating data from multiple sources for comprehensive reporting or operational insights.
+    - step: 6
+      description: >
+        Execute a final SELECT statement to retrieve all columns from the `sales_packages`
+        CTE, effectively displaying the finalized sales packages.
+      details:
+        - purpose: Retrieve all columns from the `sales_packages` CTE.
+        - source_cte: sales_packages
