@@ -1,0 +1,54 @@
+Common Table Expressions (CTEs):
+
+CTEs (WITH clause) allow you to define temporary result sets that can be used within subsequent SELECT, INSERT, UPDATE, or DELETE statements. In this YAML representation, the CTEs define several stages of data transformation and merging: ecommerce_exploded, subscriptions_product, combined_data, and sales_products.
+ecommerce_exploded CTE:
+
+This CTE retrieves data from a source referenced by {{ref ('ecommerce_products')}}. It explodes variants from JSON data to extract specific details about ecommerce products:
+
+    sku: Stock Keeping Unit (SKU) of the product variant.
+    name: Title of the product.
+    product_description: Description of the product.
+    created_at: Date and time when the product was created.
+    type: Type of product (set as 'hardware').
+    store: Fixed value indicating the store type ('ecommerce').
+
+subscriptions_product CTE:
+
+This CTE retrieves data from {{ref ('subscriptions_adjustments')}}, filtering for subscription products and removing refunds:
+
+    sku: Product code (SKU) associated with the subscription.
+    created_at: Date and time when the subscription product was created.
+    name: NULL (no specific name provided for subscriptions).
+    product_description: Description of the subscription product.
+    type: Type of product categorized based on subscription existence.
+    store: Fixed value indicating the store type ('subscriptions').
+
+combined_data CTE:
+
+This CTE combines data from ecommerce_exploded and subscriptions_product using UNION ALL, preserving all rows:
+
+    sku: Product SKU.
+    created_at: Date and time when the product was created.
+    name: Title or NULL depending on the product type.
+    product_description: Description of the product.
+    type: Type of product (hardware or subscription).
+    store: Store type ('ecommerce' or 'subscriptions').
+    row_num: Row number partitioned by SKU and ordered by creation date.
+
+sales_products CTE:
+
+This CTE filters combined_data to select only the first row (row_num = 1) for each SKU:
+
+    sku: Product SKU.
+    created_at: Date and time when the product was created.
+    name: Title of the product.
+    product_description: Description of the product.
+    type: Type of product (hardware or subscription).
+    store: Store type ('ecommerce' or 'subscriptions').
+
+Final SELECT Statement:
+
+The final SELECT * FROM sales_products; statement retrieves all columns from the sales_products CTE. This is the output of the entire query, providing a consolidated view of sales products from both ecommerce and subscription sources, filtering down to unique products based on SKU and creation date.
+Summary:
+
+The YAML code snippet provided demonstrates a data integration and transformation process using Common Table Expressions (CTEs). It merges and filters data from ecommerce products and subscription adjustments, categorizing and consolidating product details based on SKU and creation timestamps. This approach is useful in scenarios where a unified view of product offerings across different sales channels (like ecommerce and subscriptions) is required for reporting or analytics purposes.
