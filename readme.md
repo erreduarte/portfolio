@@ -8,9 +8,9 @@ As a client embarked on the journey from Snowflake to Databricks, there arose th
 
 The primary objective of this project was to facilitate the migration of data from Snowflake to Databricks. This involved:
 
-- **Data Transformation**: Restructuring and transforming existing sales tables to align with the new Databricks environment.
-- **Migration Strategy**: Developing a strategy to migrate data seamlessly while minimizing downtime and ensuring no loss of critical information.
-- **Optimization**: Enhancing data processing capabilities and optimizing query performance in the Databricks environment.
+- Data Transformation: Restructuring and transforming existing sales tables to align with the new Databricks environment. The transformation process was implemented using dbt (Data Build Tool) to streamline and automate the creation of models and transformations.
+- Migration Strategy: Developing a strategy to migrate data seamlessly while minimizing downtime and ensuring no loss of critical information.
+- Optimization: Enhancing data processing capabilities and optimizing query performance in the Databricks environment.
 
 ## Stakeholder Involvement
 
