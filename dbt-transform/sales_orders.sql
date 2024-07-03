@@ -15,7 +15,7 @@ WITH ecommerce_orders AS (
         total_shipping_price_set:presentment_money:amount::float                     AS shipping,
         currency                                                                     AS currency
     FROM
-        {{ref ('base_ecommerce_orders') }}
+        {{ref ('ecommerce_orders') }}
 ),
 
 subscriptions_orders AS (
